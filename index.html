@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Wichtelziehung</title>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Playfair+Display:wght@600&display=swap');
+    :root{
+      --bg-deep:#3d0000;
+      --bg-top:#5a0000;
+      --gold:#ffd97d;
+      --green:#0fa000;
+      --white:#ffffff;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%}
+    body{
+      font-family:"Poppins",sans-serif;
+      background: radial-gradient(circle at 20% 10%, #7a0000 0%, var(--bg-top) 25%, var(--bg-deep) 100%);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:var(--white);
+      overflow:hidden;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding:32px;
+    }
+    canvas#snow{position:fixed;inset:0;z-index:0;pointer-events:none;}
+    .wrap{position:relative;z-index:2;width:min(760px,95vw);display:flex;flex-direction:column;align-items:center;gap:20px;}
+    h1{font-family:"Playfair Display",serif;color:var(--gold);font-size:2.4rem;text-shadow:0 0 18px rgba(255,220,120,0.35);letter-spacing:1px;margin-bottom:6px;}
+    .card{width:100%;background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));border-radius:18px;padding:28px;display:flex;flex-direction:column;align-items:center;gap:18px;backdrop-filter:blur(10px) saturate(1.05);box-shadow:0 10px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);transition:transform .35s ease;}
+    .card:hover{ transform:translateY(-6px) }
+    .name-area{height:56px;display:flex;align-items:center;justify-content:center;width:100%;}
+    .name-placeholder{font-size:1rem;color:rgba(255,255,255,0.55);}
+    .name-display{font-family:"Playfair Display",serif;font-size:1.6rem;color:var(--gold);text-shadow:0 0 18px rgba(255,220,120,0.6);transform:translateY(8px);opacity:0;transition:all .6s cubic-bezier(.2,.9,.2,1);letter-spacing:0.5px;}
+    .name-display.show{transform:translateY(0);opacity:1;}
+    .controls{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;}
+    button.primary{background:linear-gradient(180deg,var(--green), #0b8a00);color:var(--white);border:none;padding:12px 28px;border-radius:12px;font-weight:600;font-size:1.05rem;cursor:pointer;box-shadow:0 0 30px rgba(14,168,0,0.35);position:relative;overflow:hidden;transition:transform .18s ease, box-shadow .18s ease, opacity .2s;}
+    button.primary::before{content:"";position:absolute;left:0;top:-6px;width:100%;height:10px;background:rgba(255,255,255,0.95);border-radius:8px 8px 0 0;filter:blur(1px);}
+    button.primary:hover{ transform:scale(1.04); box-shadow:0 0 48px rgba(14,168,0,0.6) }
+    button.primary:active{ transform:scale(.98) }
+    button.primary[disabled]{ opacity:.6; cursor:not-allowed; box-shadow:none }
+    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.08);color:var(--white);padding:10px 16px;border-radius:10px;cursor:pointer;font-weight:600;transition:transform .15s ease, background .15s;}
+    button.ghost:hover{ transform:translateY(-3px); background:rgba(255,255,255,0.02) }
+    .result-box{min-height:44px;display:flex;align-items:center;justify-content:center;width:100%;font-weight:700;font-size:1.15rem;color:rgba(255,255,255,0.9);}
+    .scroll{display:inline-block;white-space:nowrap;filter:blur(6px);opacity:0.75;animation:shuffle 0.08s infinite linear;}
+    @keyframes shuffle{0%{ transform:translateX(0) } 100%{ transform:translateX(-2px) }}
+    .reveal{font-family:"Playfair Display",serif;font-size:1.4rem;color:var(--gold);text-shadow:0 0 22px rgba(255,220,130,0.7);animation:pop .6s cubic-bezier(.2,.9,.2,1);}
+    @keyframes pop{0%{ transform:scale(.88); opacity:0 } 60%{ transform:scale(1.04); opacity:1 } 100%{ transform:scale(1) }}
+    footer{margin-top:12px;font-size:0.78rem;opacity:0.6;letter-spacing:0.6px;text-align:center;}
+    @media (max-width:420px){h1{ font-size:1.9rem } .card{ padding:20px } .name-display{ font-size:1.2rem } button.primary{ padding:10px 18px; font-size:1rem }}
+  </style>
+</head>
+<body>
+  <canvas id="snow"></canvas>
+
+  <div class="wrap" role="main" aria-labelledby="title">
+    <h1 id="title">Wichtelziehung 🎄</h1>
+
+    <div class="card" role="region" aria-live="polite">
+      <div class="name-area">
+        <div id="namePlaceholder" class="name-placeholder">Klicke auf deinen namen und dann auf "Zettel ziehen"</div>
+        <div id="nameDisplay" class="name-display" aria-hidden="true"></div>
+      </div>
+
+      <div class="controls">
+        <div id="userSelect" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+        <button id="drawBtn" class="primary" aria-label="Zettel ziehen" disabled>Zettel ziehen</button>
+        <button id="saveBtn" class="ghost" style="display:none">Erinnerung speichern</button>
+      </div>
+
+      <div class="result-box" id="resultBox" aria-live="polite"></div>
+    </div>
+
+    <footer>diese website ist so unnötig...</footer>
+  </div>
+
+  <audio id="ding" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_2cc7df3dc1.mp3?filename=reward-142.wav"></audio>
+
+  <script>
+    // --- Snow ---
+    const snowCanvas = document.getElementById('snow');
+    const sctx = snowCanvas.getContext('2d');
+    let W = snowCanvas.width = innerWidth;
+    let H = snowCanvas.height = innerHeight;
+    let flakes = [];
+    const FL_COUNT = Math.floor((W*H)/2000);
+    function initFlakes(){ flakes=[]; for(let i=0;i<FL_COUNT;i++){ flakes.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*2.5+0.6,s:Math.random()*0.8+0.3,phase:Math.random()*Math.PI*2})} }
+    initFlakes();
+    function drawSnow(){ sctx.clearRect(0,0,W,H); sctx.fillStyle='rgba(255,255,255,0.92)'; sctx.beginPath(); for(const f of flakes){ sctx.moveTo(f.x,f.y); sctx.arc(f.x,f.y,f.r,0,Math.PI*2) } sctx.fill(); updateSnow() }
+    function updateSnow(){ for(const f of flakes){ f.y+=f.s*1.8; f.x+=Math.sin(f.phase+f.y/80)*0.6; if(f.y>H+10){ f.y=-10; f.x=Math.random()*W; } } }
+    function loopSnow(){ drawSnow(); requestAnimationFrame(loopSnow); }
+    loopSnow();
+    addEventListener('resize', ()=>{ W=snowCanvas.width=innerWidth; H=snowCanvas.height=innerHeight; initFlakes(); });
+
+    // --- Wichtel logic ---
+    const allNames = ["tanja","stas","richard","robin","karin","papa","mama"];
+    const STORAGE_REMAIN="wichtel_remaining_v2";
+    const STORAGE_DRAWN="wichtel_drawn_v2";
+    const STORAGE_USER="wichtel_user";
+
+    let userName = localStorage.getItem(STORAGE_USER);
+    const userSelectDiv = document.getElementById("userSelect");
+    const drawBtn = document.getElementById("drawBtn");
+    const saveBtn = document.getElementById("saveBtn");
+    const resultBox = document.getElementById("resultBox");
+    const nameDisplay = document.getElementById("nameDisplay");
+    const namePlaceholder = document.getElementById("namePlaceholder");
+    const ding = document.getElementById("ding");
+
+    // User-Auswahl Buttons
+    allNames.forEach(name=>{
+      const btn = document.createElement("button");
+      btn.textContent = capitalize(name);
+      btn.className = "ghost";
+      btn.addEventListener("click", ()=>{
+        userName = name;
+        localStorage.setItem(STORAGE_USER,name);
+        document.querySelectorAll("#userSelect button").forEach(b=>b.disabled=true);
+        btn.style.background="rgba(255,255,255,0.08)";
+        drawBtn.disabled=false;
+      });
+      userSelectDiv.appendChild(btn);
+    });
+
+    function loadRemaining(){
+      const raw=localStorage.getItem(STORAGE_REMAIN);
+      if(!raw){
+        const copy=[...allNames].filter(n=>n!==userName);
+        localStorage.setItem(STORAGE_REMAIN,JSON.stringify(copy));
+        return copy;
+      } else {
+        try{return JSON.parse(raw).filter(n=>n!==userName);} 
+        catch(e){ localStorage.removeItem(STORAGE_REMAIN); return loadRemaining(); }
+      }
+    }
+
+    let remaining = loadRemaining();
+
+    const already=localStorage.getItem(STORAGE_DRAWN);
+    if(already){ showResult(already,true); lockAfterDraw(); }
+
+    drawBtn.addEventListener('click', ()=>{
+      if(localStorage.getItem(STORAGE_DRAWN)){ resultBox.textContent="Du hast bereits gezogen!"; return; }
+      if(remaining.length===0){ resultBox.textContent="Keine Namen mehr verfügbar!"; return; }
+      resultBox.innerHTML=`<span class="scroll">${remaining.join(' • ')}</span>`;
+      drawBtn.disabled=true;
+      let tick=setInterval(()=>{
+        const pick=remaining[Math.floor(Math.random()*remaining.length)];
+        const scrollEl=resultBox.querySelector('.scroll');
+        if(scrollEl) scrollEl.textContent=capitalize(pick);
+      },60);
+      setTimeout(()=>{
+        clearInterval(tick);
+        let drawn=remaining[Math.floor(Math.random()*remaining.length)];
+
+        // reroll falls eigener Name
+        if(drawn===userName){
+          drawn=remaining.filter(n=>n!==userName)[Math.floor(Math.random()*(remaining.length-1))];
+        }
+
+        resultBox.innerHTML=`<span class="reveal">${capitalize(drawn)}</span>`;
+        nameDisplay.textContent=capitalize(drawn);
+        nameDisplay.classList.add('show');
+        namePlaceholder.style.display='none';
+        ding.currentTime=0; ding.play().catch(()=>{});
+        remaining = remaining.filter(n=>n!==drawn);
+        localStorage.setItem(STORAGE_REMAIN,JSON.stringify(remaining));
+        localStorage.setItem(STORAGE_DRAWN,drawn);
+        saveBtn.style.display="inline-block";
+        lockAfterDraw();
+      },2200);
+    });
+
+    function showResult(name,initial=false){
+      nameDisplay.textContent=capitalize(name);
+      nameDisplay.classList.add('show');
+      namePlaceholder.style.display='none';
+      resultBox.innerHTML=`<span class="reveal">${capitalize(name)}</span>`;
+      saveBtn.style.display="inline-block";
+    }
+
+    function lockAfterDraw(){ drawBtn.disabled=true; drawBtn.style.cursor="not-allowed"; }
+
+    function capitalize(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+
+    saveBtn.addEventListener('click',()=>{
+      const drawn=localStorage.getItem(STORAGE_DRAWN);
+      if(!drawn) return;
+      createReminderImage(capitalize(drawn));
+    });
+
+    function createReminderImage(name){
+      const size=1080;
+      const c=document.createElement('canvas'); c.width=size; c.height=size; const g=c.getContext('2d');
+      const grad=g.createRadialGradient(size*0.2,size*0.12,size*0.1,size*0.5,size*0.6,size*0.9);
+      grad.addColorStop(0,'#7a0000'); grad.addColorStop(0.4,'#4c0000'); grad.addColorStop(1,'#2b0000'); g.fillStyle=grad; g.fillRect(0,0,size,size);
+      g.fillStyle='rgba(0,0,0,0.28)'; g.beginPath(); g.rect(0,0,size,size); g.fill();
+      g.strokeStyle='#d9b86b'; g.lineWidth=12; g.shadowColor='rgba(255,210,130,0.6)'; g.shadowBlur=18;
+      roundRect(g,48,48,size-96,size-96,28,false,true);
+      g.save(); g.fillStyle='rgba(255,255,255,0.06)'; for(let i=0;i<28;i++){ g.beginPath(); g.arc(48+28+Math.random()*40,48+28+Math.random()*40,Math.random()*1.6+0.3,0,Math.PI*2); g.fill(); } g.restore();
+      g.fillStyle='rgba(255,255,255,0.92)'; for(let i=0;i<140;i++){ const r=Math.random()*2.2+0.5; const x=48+Math.random()*(size-96); const y=48+Math.random()*(size-96); g.globalAlpha=0.85*(0.6+Math.random()*0.4); g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fill(); } g.globalAlpha=1;
+      g.textAlign='center'; g.textBaseline='middle';
+      g.font='700 48px "Poppins", sans-serif'; g.fillStyle='#ffd97d'; g.shadowColor='rgba(255,220,120,0.25)'; g.shadowBlur=12; g.fillText('Erinnerung',size/2,size*0.38);
+      g.font='700 52px "Playfair Display", serif'; g.fillStyle='#fff3cf'; g.shadowColor='rgba(255,220,120,0.45)'; g.shadowBlur=34; wrapText(g,`Kaufe ein Wichtelgeschenk für ${name}`,size/2,size*0.52,size-48*4,60);
+      g.font='48px "Poppins", sans-serif'; g.fillStyle='#ffd97d'; g.shadowBlur=10; g.fillText('🎁',size/2,size*0.72);
+      g.font='400 22px "Poppins", sans-serif'; g.fillStyle='rgba(255,255,255,0.75)'; g.shadowBlur=0; g.fillText('Wichtel-Erinnerung • '+new Date().getFullYear(),size/2,size-48-20);
+      const url=c.toDataURL('image/png'); const link=document.createElement('a'); link.href=url; link.download=`Wichtel-Erinnerung-${name.replace(/\s+/g,'-')}.png`; document.body.appendChild(link); link.click(); link.remove();
+    }
+
+    function roundRect(ctx,x,y,w,h,r,fill,stroke){ if(typeof r==='undefined') r=5; ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); if(fill) ctx.fill(); if(stroke) ctx.stroke(); }
+    function wrapText(ctx,text,x,y,maxWidth,lineHeight){ 
+      const words=text.split(' '); 
+      let line=''; 
+      let testY=y; 
+      for(let n=0;n<words.length;n++){ 
+        const testLine=line+words[n]+' '; 
+        const metrics=ctx.measureText(testLine); 
+        const testWidth=metrics.width; 
+        if(testWidth>maxWidth && n>0){ ctx.fillText(line,x,testY); line=words[n]+' '; testY+=lineHeight; } 
+        else{ line=testLine; } 
+      } 
+      ctx.fillText(line,x,testY); 
+    }
+  </script>
+</body>
+</html>
