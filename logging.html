@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wichtel Logging</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #3d0000;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    h1 {
+      color: #ffd97d;
+      margin-bottom: 2rem;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 600px;
+    }
+    th, td {
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 0.6rem 1rem;
+      text-align: left;
+    }
+    th {
+      background: rgba(255,255,255,0.1);
+    }
+    tr:nth-child(even) {
+      background: rgba(255,255,255,0.05);
+    }
+    footer {
+      margin-top: 2rem;
+      font-size: 0.8rem;
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body>
+  <h1>Wichtel Logging</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Teilnehmer</th>
+        <th>Zog</th>
+      </tr>
+    </thead>
+    <tbody id="logBody">
+      <!-- Ergebnisse werden hier geladen -->
+    </tbody>
+  </table>
+  <footer>Nur über /logging sichtbar</footer>
+
+  <script>
+    // Holt alle gezogenen Ergebnisse aus localStorage
+    const STORAGE_DRAWN = "wichtel_drawn_v2";
+    const STORAGE_USER = "wichtel_user";
+
+    const logBody = document.getElementById("logBody");
+
+    // Wenn es Daten gibt
+    const user = localStorage.getItem(STORAGE_USER);
+    const drawn = localStorage.getItem(STORAGE_DRAWN);
+
+    if(user && drawn){
+      const row = document.createElement("tr");
+      const tdUser = document.createElement("td");
+      tdUser.textContent = capitalize(user);
+      const tdDrawn = document.createElement("td");
+      tdDrawn.textContent = capitalize(drawn);
+      row.appendChild(tdUser);
+      row.appendChild(tdDrawn);
+      logBody.appendChild(row);
+    } else {
+      const row = document.createElement("tr");
+      const td = document.createElement("td");
+      td.setAttribute("colspan", 2);
+      td.textContent = "Noch keine Ergebnisse verfügbar.";
+      row.appendChild(td);
+      logBody.appendChild(row);
+    }
+
+    function capitalize(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+  </script>
+</body>
+</html>
