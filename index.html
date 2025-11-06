@@ -57,22 +57,22 @@
 <body>
   <canvas id="snow"></canvas>
 
-  <div class="wrap" role="main" aria-labelledby="title">
-    <h1 id="title">Wichtelziehung 🎄</h1>
+  <div class="wrap">
+    <h1>Wichtelziehung 🎄</h1>
 
-    <div class="card" role="region" aria-live="polite">
+    <div class="card">
       <div class="name-area">
-        <div id="namePlaceholder" class="name-placeholder">Klicke auf DEINEN Namen und dann auf "Zettel ziehen"</div>
-        <div id="nameDisplay" class="name-display" aria-hidden="true"></div>
+        <div id="namePlaceholder" class="name-placeholder">Wähle deinen Namen und zieh einen Zettel</div>
+        <div id="nameDisplay" class="name-display"></div>
       </div>
 
       <div class="controls">
         <div id="userSelect" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
-        <button id="drawBtn" class="primary" aria-label="Zettel ziehen" disabled>Zettel ziehen</button>
+        <button id="drawBtn" class="primary" disabled>Zettel ziehen</button>
         <button id="saveBtn" class="ghost" style="display:none">Erinnerung speichern</button>
       </div>
 
-      <div class="result-box" id="resultBox" aria-live="polite"></div>
+      <div class="result-box" id="resultBox"></div>
     </div>
 
     <footer>diese website ist so unnötig...</footer>
@@ -81,13 +81,13 @@
   <audio id="ding" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_2cc7df3dc1.mp3?filename=reward-142.wav"></audio>
 
   <script>
-    // --- Snow ---
+    // --- Schnee ---
     const snowCanvas = document.getElementById('snow');
     const sctx = snowCanvas.getContext('2d');
     let W = snowCanvas.width = innerWidth;
     let H = snowCanvas.height = innerHeight;
     let flakes = [];
-    const FL_COUNT = Math.floor((W*H)/2000);
+    const FL_COUNT = Math.floor((W*H)/1800);
     function initFlakes(){ flakes=[]; for(let i=0;i<FL_COUNT;i++){ flakes.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*2.5+0.6,s:Math.random()*0.8+0.3,phase:Math.random()*Math.PI*2})} }
     initFlakes();
     function drawSnow(){ sctx.clearRect(0,0,W,H); sctx.fillStyle='rgba(255,255,255,0.92)'; sctx.beginPath(); for(const f of flakes){ sctx.moveTo(f.x,f.y); sctx.arc(f.x,f.y,f.r,0,Math.PI*2) } sctx.fill(); updateSnow() }
@@ -96,11 +96,13 @@
     loopSnow();
     addEventListener('resize', ()=>{ W=snowCanvas.width=innerWidth; H=snowCanvas.height=innerHeight; initFlakes(); });
 
-    // --- Wichtel logic ---
-    const allNames = ["stas","richard","robin","karin","papa","mama"];
-    const STORAGE_REMAIN="wichtel_remaining_v2";
-    const STORAGE_DRAWN="wichtel_drawn_v2";
-    const STORAGE_USER="wichtel_user";
+    // --- Wichtel Logik ---
+    const canDraw = ["stas","richard"];
+    const canBeDrawn = ["karin","mama"];
+
+    const STORAGE_REMAIN="wichtel_remaining_v3";
+    const STORAGE_DRAWN="wichtel_drawn_v3";
+    const STORAGE_USER="wichtel_user_v3";
 
     let userName = localStorage.getItem(STORAGE_USER);
     const userSelectDiv = document.getElementById("userSelect");
@@ -111,8 +113,8 @@
     const namePlaceholder = document.getElementById("namePlaceholder");
     const ding = document.getElementById("ding");
 
-    // User-Auswahl Buttons
-    allNames.forEach(name=>{
+    // Buttons für Auswahl
+    canDraw.forEach(name=>{
       const btn = document.createElement("button");
       btn.textContent = capitalize(name);
       btn.className = "ghost";
@@ -129,7 +131,7 @@
     function loadRemaining(){
       const raw=localStorage.getItem(STORAGE_REMAIN);
       if(!raw){
-        const copy=[...allNames].filter(n=>n!==userName);
+        const copy=[...canBeDrawn].filter(n=>n!==userName);
         localStorage.setItem(STORAGE_REMAIN,JSON.stringify(copy));
         return copy;
       } else {
@@ -198,33 +200,18 @@
       const c=document.createElement('canvas'); c.width=size; c.height=size; const g=c.getContext('2d');
       const grad=g.createRadialGradient(size*0.2,size*0.12,size*0.1,size*0.5,size*0.6,size*0.9);
       grad.addColorStop(0,'#7a0000'); grad.addColorStop(0.4,'#4c0000'); grad.addColorStop(1,'#2b0000'); g.fillStyle=grad; g.fillRect(0,0,size,size);
-      g.fillStyle='rgba(0,0,0,0.28)'; g.beginPath(); g.rect(0,0,size,size); g.fill();
       g.strokeStyle='#d9b86b'; g.lineWidth=12; g.shadowColor='rgba(255,210,130,0.6)'; g.shadowBlur=18;
       roundRect(g,48,48,size-96,size-96,28,false,true);
-      g.save(); g.fillStyle='rgba(255,255,255,0.06)'; for(let i=0;i<28;i++){ g.beginPath(); g.arc(48+28+Math.random()*40,48+28+Math.random()*40,Math.random()*1.6+0.3,0,Math.PI*2); g.fill(); } g.restore();
-      g.fillStyle='rgba(255,255,255,0.92)'; for(let i=0;i<140;i++){ const r=Math.random()*2.2+0.5; const x=48+Math.random()*(size-96); const y=48+Math.random()*(size-96); g.globalAlpha=0.85*(0.6+Math.random()*0.4); g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fill(); } g.globalAlpha=1;
       g.textAlign='center'; g.textBaseline='middle';
-      g.font='700 48px "Poppins", sans-serif'; g.fillStyle='#ffd97d'; g.shadowColor='rgba(255,220,120,0.25)'; g.shadowBlur=12; g.fillText('Erinnerung',size/2,size*0.38);
-      g.font='700 52px "Playfair Display", serif'; g.fillStyle='#fff3cf'; g.shadowColor='rgba(255,220,120,0.45)'; g.shadowBlur=34; wrapText(g,`Kaufe ein Wichtelgeschenk für ${name}`,size/2,size*0.52,size-48*4,60);
-      g.font='48px "Poppins", sans-serif'; g.fillStyle='#ffd97d'; g.shadowBlur=10; g.fillText('🎁',size/2,size*0.72);
-      g.font='400 22px "Poppins", sans-serif'; g.fillStyle='rgba(255,255,255,0.75)'; g.shadowBlur=0; g.fillText('Wichtel-Erinnerung • '+new Date().getFullYear(),size/2,size-48-20);
+      g.font='700 48px "Poppins", sans-serif'; g.fillStyle='#ffd97d'; g.fillText('Erinnerung',size/2,size*0.38);
+      g.font='700 52px "Playfair Display", serif'; g.fillStyle='#fff3cf'; wrapText(g,`Kaufe ein Wichtelgeschenk für ${name}`,size/2,size*0.52,size-48*4,60);
+      g.font='48px "Poppins", sans-serif'; g.fillStyle='#ffd97d'; g.fillText('🎁',size/2,size*0.72);
+      g.font='400 22px "Poppins", sans-serif'; g.fillStyle='rgba(255,255,255,0.75)'; g.fillText('Wichtel-Erinnerung • '+new Date().getFullYear(),size/2,size-68);
       const url=c.toDataURL('image/png'); const link=document.createElement('a'); link.href=url; link.download=`Wichtel-Erinnerung-${name.replace(/\s+/g,'-')}.png`; document.body.appendChild(link); link.click(); link.remove();
     }
 
-    function roundRect(ctx,x,y,w,h,r,fill,stroke){ if(typeof r==='undefined') r=5; ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); if(fill) ctx.fill(); if(stroke) ctx.stroke(); }
-    function wrapText(ctx,text,x,y,maxWidth,lineHeight){ 
-      const words=text.split(' '); 
-      let line=''; 
-      let testY=y; 
-      for(let n=0;n<words.length;n++){ 
-        const testLine=line+words[n]+' '; 
-        const metrics=ctx.measureText(testLine); 
-        const testWidth=metrics.width; 
-        if(testWidth>maxWidth && n>0){ ctx.fillText(line,x,testY); line=words[n]+' '; testY+=lineHeight; } 
-        else{ line=testLine; } 
-      } 
-      ctx.fillText(line,x,testY); 
-    }
+    function roundRect(ctx,x,y,w,h,r,fill,stroke){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); if(fill) ctx.fill(); if(stroke) ctx.stroke(); }
+    function wrapText(ctx,text,x,y,maxWidth,lineHeight){ const words=text.split(' '); let line=''; let testY=y; for(let n=0;n<words.length;n++){ const testLine=line+words[n]+' '; const metrics=ctx.measureText(testLine); const testWidth=metrics.width; if(testWidth>maxWidth && n>0){ ctx.fillText(line,x,testY); line=words[n]+' '; testY+=lineHeight; } else{ line=testLine; } } ctx.fillText(line,x,testY); }
   </script>
 </body>
 </html>
